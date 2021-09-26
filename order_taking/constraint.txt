@@ -43,6 +43,12 @@ data PlacedOrderAcknowledgment =
     PricedOrder
     AND AcknowledgmentLetter
 
+data BillableOrderPlaced ]
+    OrderId
+    AND BillingAddress
+    AND AmountToBill
+
+
 workflow "Place Order" =
     input: OrderForm
     output:
