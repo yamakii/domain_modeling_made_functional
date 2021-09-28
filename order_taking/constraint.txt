@@ -48,7 +48,6 @@ data BillableOrderPlaced ]
     AND BillingAddress
     AND AmountToBill
 
-
 workflow "Place Order" =
     input: OrderForm
     output:
