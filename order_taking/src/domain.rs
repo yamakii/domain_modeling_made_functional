@@ -56,30 +56,3 @@ struct OrderLine {
     order_quantity: OrderQuantity,
     price: Price,
 }
-
-// to be
-
-fn place_order(order: UnvalidatedOrder) -> Result<PlaceOrderEvent, PlaceOrderEror> {
-    unimplemented!()
-}
-
-struct UnvalidatedOrder {
-    order_id: String,
-    customer_info: (),
-    shipping_address: (),
-}
-
-struct PlaceOrderEvent {
-    acknowledgement_sent: (),
-    order_placed: (),
-    billable_order_placed: (),
-}
-
-enum PlaceOrderEror {
-    ValidationError(Vec<ValidationError>),
-}
-
-struct ValidationError {
-    fieled_name: String,
-    error_description: String,
-}
