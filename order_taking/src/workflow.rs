@@ -1,5 +1,3 @@
-// to be
-
 struct Command<Data> {
     data: Data,
     timestamp: (),
