@@ -1,20 +1,20 @@
 use anyhow::Result;
 
-struct WidgetCode(String);
-struct GizmoCode(String);
-enum ProductCode {
+pub struct WidgetCode(String);
+pub struct GizmoCode(String);
+pub enum ProductCode {
     Widget(WidgetCode),
     Gizmo(GizmoCode),
 }
 
-struct UnitQuantity(i32);
-struct KilogramQuantity(f64);
-enum OrderQuantity {
+pub struct UnitQuantity(i32);
+pub struct KilogramQuantity(f64);
+pub enum OrderQuantity {
     Unit(UnitQuantity),
     Kilogram(KilogramQuantity),
 }
 
-struct OrderId(String);
+pub struct OrderId(String);
 impl OrderId {
     pub fn new(value: String) -> Result<Self> {
         if value.is_empty() {
@@ -31,16 +31,16 @@ impl OrderId {
     }
 }
 
-struct OrderLineId();
-struct CustomerId();
+pub struct OrderLineId();
+pub struct CustomerId();
 
-struct CustomerInfor();
-struct ShippingAddress();
-struct BillingAddress();
-struct Price();
-struct BillingAmount();
+pub struct CustomerInfor();
+pub struct ShippingAddress();
+pub struct BillingAddress();
+pub struct Price();
+pub struct BillingAmount();
 
-struct Order {
+pub struct Order {
     id: OrderId,
     customer_id: CustomerId,
     shipping_address: ShippingAddress,
@@ -49,7 +49,7 @@ struct Order {
     amount_to_bill: BillingAmount,
 }
 
-struct OrderLine {
+pub struct OrderLine {
     id: OrderLineId,
     oder_id: OrderId,
     product_code: ProductCode,

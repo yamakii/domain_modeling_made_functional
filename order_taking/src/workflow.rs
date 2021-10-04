@@ -1,3 +1,5 @@
+use crate::domain::ProductCode;
+
 struct Command<Data> {
     data: Data,
     timestamp: (),
@@ -33,4 +35,27 @@ enum PlaceOrderEror {
 struct ValidationError {
     fieled_name: String,
     error_description: String,
+}
+
+fn validate_order<T>(_ctx: T, _order: UnvalidatedOrder) -> Result<ValidatedOrder, PlaceOrderEror>
+where
+    T: ChackProductCodeExists + CheckAddressExists,
+{
+    unimplemented!()
+}
+
+struct ValidatedOrder();
+
+trait ChackProductCodeExists {
+    fn exists_product_code(product_code: ProductCode) -> bool;
+}
+
+struct UnvalidatedAddress();
+struct CheckedAddress();
+struct AddressValidationError(String);
+
+trait CheckAddressExists {
+    fn check_address_exists(
+        unvalidated_address: UnvalidatedAddress,
+    ) -> Result<CheckedAddress, AddressValidationError>;
 }
