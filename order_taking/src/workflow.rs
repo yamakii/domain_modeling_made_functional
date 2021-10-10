@@ -1,4 +1,4 @@
-use crate::domain::ProductCode;
+use crate::domain::{OrderId, Price, ProductCode};
 
 struct Command<Data> {
     data: Data,
@@ -58,4 +58,46 @@ trait CheckAddressExists {
     fn check_address_exists(
         unvalidated_address: UnvalidatedAddress,
     ) -> Result<CheckedAddress, AddressValidationError>;
+}
+
+fn price_order<T>(_ctx: T, _order: ValidatedOrder) -> PricedOrder
+where
+    T: GetProductPrice,
+{
+    unimplemented!()
+}
+
+struct PricedOrder();
+
+trait GetProductPrice {
+    fn get_product_price(product_code: ProductCode) -> Price;
+}
+
+fn acknowledgment_order<T>(_ctx: T, _order: PricedOrder) -> Option<OrderAcknowledgmentSent>
+where
+    T: CreateOrderAcknowledgmentLetter + SendOrderAcknowledgment,
+{
+    unimplemented!()
+}
+
+trait CreateOrderAcknowledgmentLetter {
+    fn create_order_acknowledgment_letter(_order: PricedOrder) -> HtmlString;
+}
+
+struct HtmlString();
+
+trait SendOrderAcknowledgment {
+    fn send_order_acknowledgment(_order: OrderAcknowledgment) -> Option<OrderAcknowledgmentSent>;
+}
+
+struct EmailAddress();
+
+struct OrderAcknowledgment {
+    email_address: EmailAddress,
+    letter: HtmlString,
+}
+
+struct OrderAcknowledgmentSent {
+    order_id: OrderId,
+    email_address: EmailAddress,
 }
