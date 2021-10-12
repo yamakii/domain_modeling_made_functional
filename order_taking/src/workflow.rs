@@ -1,4 +1,4 @@
-use crate::domain::{OrderId, Price, ProductCode};
+use crate::domain::{BillingAddress, BillingAmount, OrderId, Price, ProductCode};
 
 struct Command<Data> {
     data: Data,
@@ -22,10 +22,10 @@ struct UnvalidatedOrder {
     shipping_address: (),
 }
 
-struct PlaceOrderEvent {
-    acknowledgement_sent: (),
-    order_placed: (),
-    billable_order_placed: (),
+enum PlaceOrderEvent {
+    OrderPlaced(OrderPlaced),
+    BillableOrderPlaced(BillableOrderPlaced),
+    AcknowledgmentSent(OrderAcknowledgmentSent),
 }
 
 enum PlaceOrderEror {
@@ -100,4 +100,15 @@ struct OrderAcknowledgment {
 struct OrderAcknowledgmentSent {
     order_id: OrderId,
     email_address: EmailAddress,
+}
+
+type OrderPlaced = PricedOrder;
+struct BillableOrderPlaced {
+    order_id: OrderId,
+    billing_address: BillingAddress,
+    amount_to_bill: BillingAmount,
+}
+
+fn create_events(_order: PricedOrder) -> Vec<PlaceOrderEvent> {
+    unimplemented!()
 }
