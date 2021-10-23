@@ -1,60 +1,135 @@
-use crate::domain::{BillingAddress, BillingAmount, OrderId, ProductCode};
+use crate::domain::{
+    Address, BillingAddress, BillingAmount, CustomerInfo, OrderId, OrderLineId, OrderQuantity,
+    Price, ProductCode,
+};
 use async_trait::async_trait;
 
-struct Command<Data> {
+// ---------------------------------
+// Input data
+// ---------------------------------
+
+pub struct UnvalidatedOrder {
+    order_id: String,
+    customer_info: UnvalidatedCustomer,
+    shipping_address: UnvalidatedAddress,
+}
+
+pub struct UnvalidatedCustomer {
+    name: String,
+    email: String,
+}
+
+pub struct UnvalidatedAddress();
+
+// ---------------------------------
+// Input Command
+// ---------------------------------
+
+pub struct Command<Data> {
     data: Data,
     timestamp: (),
     user_id: (),
 }
 
-enum OrderTakingCommand {
-    Place(Command<UnvalidatedOrder>),
+pub type PlaceOrderCommand = Command<UnvalidatedOrder>;
+
+pub enum OrderTakingCommand {
+    Place(PlaceOrderCommand),
     Change(),
     Cancel(),
 }
 
-fn place_order(_order: UnvalidatedOrder) -> Result<PlaceOrderEvent, PlaceOrderEror> {
-    unimplemented!()
+// ---------------------------------
+// Public API
+// ---------------------------------
+
+pub type OrderPlaced = PricedOrder;
+
+pub struct BillableOrderPlaced {
+    order_id: OrderId,
+    billing_address: BillingAddress,
+    amount_to_bill: BillingAmount,
 }
 
-struct UnvalidatedOrder {
-    order_id: String,
-    customer_info: (),
-    shipping_address: (),
+pub struct OrderAcknowledgmentSent {
+    order_id: OrderId,
+    email_address: EmailAddress,
 }
 
-enum PlaceOrderEvent {
+pub enum PlaceOrderEvent {
     OrderPlaced(OrderPlaced),
     BillableOrderPlaced(BillableOrderPlaced),
     AcknowledgmentSent(OrderAcknowledgmentSent),
 }
 
-enum PlaceOrderEror {
+pub enum PlaceOrderEror {
     ValidationError(Vec<ValidationError>),
 }
 
-struct ValidationError {
+pub struct ValidationError {
     fieled_name: String,
     error_description: String,
 }
 
-async fn validate_order<T>(
-    _ctx: T,
-    _order: UnvalidatedOrder,
-) -> Result<ValidatedOrder, PlaceOrderEror>
-where
-    T: CheckProductCodeExists + CheckAddressExists,
-{
+pub async fn place_order(
+    _order: PlaceOrderCommand,
+) -> Result<Vec<PlaceOrderEvent>, PlaceOrderEror> {
     unimplemented!()
 }
 
-struct ValidatedOrder();
+// ---------------------------------
+// Order life cycle
+// ---------------------------------
+
+pub struct ValidatedOrderLine {
+    id: OrderLineId,
+    oder_id: OrderId,
+    product_code: ProductCode,
+    order_quantity: OrderQuantity,
+    price: Price,
+}
+
+pub struct ValidatedOrder {
+    id: OrderId,
+    customer_info: CustomerInfo,
+    shipping_address: Address,
+    billing_address: Address,
+    order_lines: Vec<ValidatedOrderLine>,
+}
+
+pub struct PricedOrderLine {
+    id: OrderLineId,
+    oder_id: OrderId,
+    product_code: ProductCode,
+    order_quantity: OrderQuantity,
+    price: Price,
+}
+
+pub struct PricedOrder {
+    id: OrderId,
+    customer_info: CustomerInfo,
+    shipping_address: Address,
+    billing_address: Address,
+    order_lines: Vec<ValidatedOrderLine>,
+    amount_to_bill: BillingAmount,
+}
+
+pub enum Order {
+    Unvalidated(UnvalidatedOrder),
+    Validated(ValidatedOrder),
+    Priced(PricedOrder),
+}
+
+// ---------------------------------
+// Definitions of Internal Steps
+// ---------------------------------
+
+// ----- Validate order -----
 
 trait CheckProductCodeExists {
     fn exists_product_code(product_code: ProductCode) -> bool;
 }
 
-struct UnvalidatedAddress();
 struct CheckedAddress();
 struct AddressValidationError(String);
 
@@ -65,6 +140,24 @@ trait CheckAddressExists {
     ) -> Result<CheckedAddress, AddressValidationError>;
 }
 
+async fn validate_order<T>(
+    _ctx: T,
+    _order: UnvalidatedOrder,
+) -> Result<ValidatedOrder, Vec<ValidationError>>
+where
+    T: CheckProductCodeExists + CheckAddressExists,
+{
+    unimplemented!()
+}
+
+// ----- Price order -----
+
+trait GetProductPrice {
+    fn get_product_price(product_code: ProductCode) -> Result<PricedOrder, PricingEror>;
+}
+
+struct PricingEror(String);
+
 fn price_order<T>(_ctx: T, _order: ValidatedOrder) -> Result<PricedOrder, PricingEror>
 where
     T: GetProductPrice,
@@ -72,19 +165,7 @@ where
     unimplemented!()
 }
 
-struct PricedOrder();
-struct PricingEror(String);
-
-trait GetProductPrice {
-    fn get_product_price(product_code: ProductCode) -> Result<PricedOrder, PricingEror>;
-}
-
-async fn acknowledgment_order<T>(_ctx: T, _order: PricedOrder) -> Option<OrderAcknowledgmentSent>
-where
-    T: CreateOrderAcknowledgmentLetter + SendOrderAcknowledgment,
-{
-    unimplemented!()
-}
+// ----- Acknowledgment order -----
 
 trait CreateOrderAcknowledgmentLetter {
     fn create_order_acknowledgment_letter(_order: PricedOrder) -> HtmlString;
@@ -106,17 +187,14 @@ struct OrderAcknowledgment {
     letter: HtmlString,
 }
 
-struct OrderAcknowledgmentSent {
-    order_id: OrderId,
-    email_address: EmailAddress,
+async fn acknowledgment_order<T>(_ctx: T, _order: PricedOrder) -> Option<OrderAcknowledgmentSent>
+where
+    T: CreateOrderAcknowledgmentLetter + SendOrderAcknowledgment,
+{
+    unimplemented!()
 }
 
-type OrderPlaced = PricedOrder;
-struct BillableOrderPlaced {
-    order_id: OrderId,
-    billing_address: BillingAddress,
-    amount_to_bill: BillingAmount,
-}
+// ----- create events -----
 
 fn create_events(_order: PricedOrder) -> Vec<PlaceOrderEvent> {
     unimplemented!()

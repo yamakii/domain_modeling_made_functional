@@ -34,25 +34,9 @@ impl OrderId {
 pub struct OrderLineId();
 pub struct CustomerId();
 
-pub struct CustomerInfor();
+pub struct CustomerInfo();
+pub struct Address();
 pub struct ShippingAddress();
 pub struct BillingAddress();
 pub struct Price();
 pub struct BillingAmount();
-
-pub struct Order {
-    id: OrderId,
-    customer_id: CustomerId,
-    shipping_address: ShippingAddress,
-    billing_address: BillingAddress,
-    order_lines: (),
-    amount_to_bill: BillingAmount,
-}
-
-pub struct OrderLine {
-    id: OrderLineId,
-    oder_id: OrderId,
-    product_code: ProductCode,
-    order_quantity: OrderQuantity,
-    price: Price,
-}
