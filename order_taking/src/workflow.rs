@@ -1,4 +1,5 @@
-use crate::domain::{BillingAddress, BillingAmount, OrderId, Price, ProductCode};
+use crate::domain::{BillingAddress, BillingAmount, OrderId, ProductCode};
+use async_trait::async_trait;
 
 struct Command<Data> {
     data: Data,
@@ -37,16 +38,19 @@ struct ValidationError {
     error_description: String,
 }
 
-fn validate_order<T>(_ctx: T, _order: UnvalidatedOrder) -> Result<ValidatedOrder, PlaceOrderEror>
+async fn validate_order<T>(
+    _ctx: T,
+    _order: UnvalidatedOrder,
+) -> Result<ValidatedOrder, PlaceOrderEror>
 where
-    T: ChackProductCodeExists + CheckAddressExists,
+    T: CheckProductCodeExists + CheckAddressExists,
 {
     unimplemented!()
 }
 
 struct ValidatedOrder();
 
-trait ChackProductCodeExists {
+trait CheckProductCodeExists {
     fn exists_product_code(product_code: ProductCode) -> bool;
 }
 
@@ -54,13 +58,14 @@ struct UnvalidatedAddress();
 struct CheckedAddress();
 struct AddressValidationError(String);
 
+#[async_trait]
 trait CheckAddressExists {
-    fn check_address_exists(
+    async fn check_address_exists(
         unvalidated_address: UnvalidatedAddress,
     ) -> Result<CheckedAddress, AddressValidationError>;
 }
 
-fn price_order<T>(_ctx: T, _order: ValidatedOrder) -> PricedOrder
+fn price_order<T>(_ctx: T, _order: ValidatedOrder) -> Result<PricedOrder, PricingEror>
 where
     T: GetProductPrice,
 {
@@ -68,12 +73,13 @@ where
 }
 
 struct PricedOrder();
+struct PricingEror(String);
 
 trait GetProductPrice {
-    fn get_product_price(product_code: ProductCode) -> Price;
+    fn get_product_price(product_code: ProductCode) -> Result<PricedOrder, PricingEror>;
 }
 
-fn acknowledgment_order<T>(_ctx: T, _order: PricedOrder) -> Option<OrderAcknowledgmentSent>
+async fn acknowledgment_order<T>(_ctx: T, _order: PricedOrder) -> Option<OrderAcknowledgmentSent>
 where
     T: CreateOrderAcknowledgmentLetter + SendOrderAcknowledgment,
 {
@@ -86,8 +92,11 @@ trait CreateOrderAcknowledgmentLetter {
 
 struct HtmlString();
 
+#[async_trait]
 trait SendOrderAcknowledgment {
-    fn send_order_acknowledgment(_order: OrderAcknowledgment) -> Option<OrderAcknowledgmentSent>;
+    async fn send_order_acknowledgment(
+        _order: OrderAcknowledgment,
+    ) -> Option<OrderAcknowledgmentSent>;
 }
 
 struct EmailAddress();
