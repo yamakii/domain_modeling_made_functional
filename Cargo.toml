@@ -2,4 +2,5 @@
 
 members = [
     "order_taking",
+    "sample",
 ]
