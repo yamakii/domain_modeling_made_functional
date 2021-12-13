@@ -64,11 +64,11 @@ pub enum OrderTakingCommand {
 // Public API
 // ---------------------------------
 
-pub type OrderPlaced = PricedOrder;
+pub type PlacedOrder = PricedOrder;
 
 pub struct BillableOrderPlaced {
     order_id: OrderId,
-    billing_address: BillingAddress,
+    billing_address: Address,
     amount_to_bill: BillingAmount,
 }
 
@@ -78,7 +78,7 @@ pub struct OrderAcknowledgmentSent {
 }
 
 pub enum PlaceOrderEvent {
-    OrderPlaced(OrderPlaced),
+    OrderPlaced(PlacedOrder),
     BillableOrderPlaced(BillableOrderPlaced),
     AcknowledgmentSent(OrderAcknowledgmentSent),
 }
@@ -314,7 +314,25 @@ where
 }
 
 // ----- create events -----
+fn create_events(
+    order: PricedOrder,
+    order_acknowledgment_sent: Option<OrderAcknowledgmentSent>,
+) -> Vec<PlaceOrderEvent> {
+    let event2 = order_acknowledgment_sent.map(PlaceOrderEvent::AcknowledgmentSent);
+    let event3 = create_billing_event(&order).map(PlaceOrderEvent::BillableOrderPlaced);
+    let event1 = Some(PlaceOrderEvent::OrderPlaced(order));
+    vec![event1, event2, event3].into_iter().flatten().collect()
+}
 
-fn create_events(_order: PricedOrder) -> Vec<PlaceOrderEvent> {
-    unimplemented!()
+fn create_billing_event(order: &PlacedOrder) -> Option<BillableOrderPlaced> {
+    let billing_amount = order.amount_to_bill.value();
+    if billing_amount > 0.into() {
+        Some(BillableOrderPlaced {
+            order_id: order.id.clone(),
+            billing_address: order.billing_address.clone(),
+            amount_to_bill: order.amount_to_bill.clone(),
+        })
+    } else {
+        None
+    }
 }

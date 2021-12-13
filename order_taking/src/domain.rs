@@ -102,9 +102,10 @@ pub struct CustomerInfo {
     pub email_address: EmailAddress,
 }
 
+#[derive(new, Clone)]
 pub struct ZipCode(pub u16);
 
-#[derive(new)]
+#[derive(new, Clone)]
 pub struct Address {
     adress_line1: String50,
     adress_line2: Option<String50>,
@@ -132,6 +133,7 @@ impl Price {
     }
 }
 
+#[derive(Clone)]
 pub struct BillingAmount(Decimal);
 
 impl BillingAmount {
@@ -146,5 +148,9 @@ impl BillingAmount {
     {
         let total = prices.map(|p| p.value()).sum();
         Self::create(total)
+    }
+
+    pub fn value(&self) -> Decimal {
+        self.0
     }
 }
