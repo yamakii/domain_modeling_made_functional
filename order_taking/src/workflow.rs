@@ -245,7 +245,7 @@ where
     let lines = validate_order
         .lines
         .into_iter()
-        .map(move |line| to_priced_order_line(ctx, line))
+        .map(|line| to_priced_order_line(ctx, line))
         .collect::<Result<Vec<_>>>()?;
     let amount_to_bill = BillingAmount::sum_prices(lines.iter().map(|line| &line.price))?;
     Ok(PricedOrder {
@@ -275,17 +275,14 @@ fn to_priced_order_line<T: GetProductPrice>(
 // ----- Acknowledgment order -----
 
 trait CreateOrderAcknowledgmentLetter {
-    fn create_order_acknowledgment_letter(&self, order: PricedOrder) -> HtmlString;
+    fn create_order_acknowledgment_letter(&self, order: &PricedOrder) -> HtmlString;
 }
 
 struct HtmlString();
 
-#[async_trait]
+// #[async_trait]
 trait SendOrderAcknowledgment {
-    async fn send_order_acknowledgment(
-        &self,
-        order: OrderAcknowledgment,
-    ) -> Option<OrderAcknowledgmentSent>;
+    fn send_order_acknowledgment(&self, order: &OrderAcknowledgment) -> SendResult;
 }
 
 struct OrderAcknowledgment {
@@ -293,11 +290,27 @@ struct OrderAcknowledgment {
     letter: HtmlString,
 }
 
-async fn acknowledgment_order<T>(_ctx: T, _order: PricedOrder) -> Option<OrderAcknowledgmentSent>
+enum SendResult {
+    Sent,
+    NotSent,
+}
+
+fn acknowledgment_order<T>(ctx: &T, order: PricedOrder) -> Option<OrderAcknowledgmentSent>
 where
     T: CreateOrderAcknowledgmentLetter + SendOrderAcknowledgment,
 {
-    unimplemented!()
+    let letter = ctx.create_order_acknowledgment_letter(&order);
+    let acknowledgment = OrderAcknowledgment {
+        email_address: order.customer_info.email_address.clone(),
+        letter,
+    };
+    match ctx.send_order_acknowledgment(&acknowledgment) {
+        SendResult::Sent => Some(OrderAcknowledgmentSent {
+            order_id: order.id.clone(),
+            email_address: order.customer_info.email_address,
+        }),
+        SendResult::NotSent => None,
+    }
 }
 
 // ----- create events -----

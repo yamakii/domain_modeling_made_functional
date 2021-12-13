@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 
+#[derive(Clone)]
 pub struct String50(String);
 impl String50 {
     pub fn new(value: String) -> Result<Self> {
@@ -61,6 +62,7 @@ impl OrderQuantity {
     }
 }
 
+#[derive(Clone)]
 pub struct OrderId(String50);
 impl OrderId {
     pub fn new(value: String) -> Result<Self> {
@@ -91,13 +93,13 @@ pub struct PersonalName {
     last_name: String50,
 }
 
-#[derive(new)]
+#[derive(new, Clone)]
 pub struct EmailAddress(String);
 
 #[derive(new)]
 pub struct CustomerInfo {
     name: PersonalName,
-    email_address: EmailAddress,
+    pub email_address: EmailAddress,
 }
 
 pub struct ZipCode(pub u16);
