@@ -2,10 +2,10 @@ use anyhow::Result;
 use rust_decimal::Decimal;
 
 use crate::domain::{
-    Address, BillingAddress, BillingAmount, CustomerInfo, EmailAddress, OrderId, OrderLineId,
-    OrderQuantity, PersonalName, Price, ProductCode, String50, ZipCode,
+    Address, BillingAmount, CustomerInfo, EmailAddress, OrderId, OrderLineId, OrderQuantity,
+    PersonalName, Price, ProductCode, String50, ZipCode,
 };
-use async_trait::async_trait;
+// use async_trait::async_trait;
 
 // ---------------------------------
 // Input data
@@ -92,10 +92,19 @@ pub struct ValidationError {
     error_description: String,
 }
 
-pub async fn place_order(
-    _order: PlaceOrderCommand,
-) -> Result<Vec<PlaceOrderEvent>, PlaceOrderEror> {
-    unimplemented!()
+pub fn place_order<T>(ctx: &T, unvalidated: UnvalidatedOrder) -> Result<Vec<PlaceOrderEvent>>
+where
+    T: CheckProductCodeExists
+        + CheckAddressExists
+        + GetProductPrice
+        + CreateOrderAcknowledgmentLetter
+        + SendOrderAcknowledgment,
+{
+    let validated = validate_order(ctx, unvalidated)?;
+    let priced = price_order(ctx, validated)?;
+    let acknowledgment_sent = acknowledgment_order(ctx, &priced);
+    let events = create_events(priced, acknowledgment_sent);
+    Ok(events)
 }
 
 // ---------------------------------
@@ -144,13 +153,13 @@ pub enum Order {
 
 // ----- Validate order -----
 
-trait CheckProductCodeExists {
+pub trait CheckProductCodeExists {
     fn exists_product_code(&self, product_code: &ProductCode) -> bool;
 }
 
 type CheckedAddress = UnvalidatedAddress;
 
-trait CheckAddressExists {
+pub trait CheckAddressExists {
     fn check_address_exists(
         &self,
         unvalidated_address: &UnvalidatedAddress,
@@ -234,7 +243,7 @@ fn to_product_code<T: CheckProductCodeExists>(
 
 // ----- Price order -----
 
-trait GetProductPrice {
+pub trait GetProductPrice {
     fn get_product_price(&self, product_code: &ProductCode) -> Result<Price>;
 }
 
@@ -274,32 +283,32 @@ fn to_priced_order_line<T: GetProductPrice>(
 }
 // ----- Acknowledgment order -----
 
-trait CreateOrderAcknowledgmentLetter {
+pub trait CreateOrderAcknowledgmentLetter {
     fn create_order_acknowledgment_letter(&self, order: &PricedOrder) -> HtmlString;
 }
 
-struct HtmlString();
+pub struct HtmlString();
 
 // #[async_trait]
-trait SendOrderAcknowledgment {
+pub trait SendOrderAcknowledgment {
     fn send_order_acknowledgment(&self, order: &OrderAcknowledgment) -> SendResult;
 }
 
-struct OrderAcknowledgment {
+pub struct OrderAcknowledgment {
     email_address: EmailAddress,
     letter: HtmlString,
 }
 
-enum SendResult {
+pub enum SendResult {
     Sent,
     NotSent,
 }
 
-fn acknowledgment_order<T>(ctx: &T, order: PricedOrder) -> Option<OrderAcknowledgmentSent>
+fn acknowledgment_order<T>(ctx: &T, order: &PricedOrder) -> Option<OrderAcknowledgmentSent>
 where
     T: CreateOrderAcknowledgmentLetter + SendOrderAcknowledgment,
 {
-    let letter = ctx.create_order_acknowledgment_letter(&order);
+    let letter = ctx.create_order_acknowledgment_letter(order);
     let acknowledgment = OrderAcknowledgment {
         email_address: order.customer_info.email_address.clone(),
         letter,
@@ -307,7 +316,7 @@ where
     match ctx.send_order_acknowledgment(&acknowledgment) {
         SendResult::Sent => Some(OrderAcknowledgmentSent {
             order_id: order.id.clone(),
-            email_address: order.customer_info.email_address,
+            email_address: order.customer_info.email_address.clone(),
         }),
         SendResult::NotSent => None,
     }

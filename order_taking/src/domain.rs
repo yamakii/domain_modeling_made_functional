@@ -114,8 +114,7 @@ pub struct Address {
     city: String50,
     zip_code: ZipCode,
 }
-pub struct ShippingAddress();
-pub struct BillingAddress();
+
 #[derive(new)]
 pub struct Price(Decimal);
 impl Price {
